@@ -25,6 +25,16 @@ def euclidean_dist(vector_x, vector_y):
         raise Exception('Vectors must be same dimensions')
     return sum((vector_x[dim] - vector_y[dim]) ** 2 for dim in range(len(vector_x)))
 
+def learn_new_face(face_descriptor):
+    name = input("Enter name of the face")
+    filename = name+".png"
+    faces.append({"desc":face_descriptor ,"name": name, "image": filename})
+
+    x, y, w, h = [d.left(), d.top(), d.width(), d.height()]
+    cv2.imwrite("./data/faces/"+filename, frame[y:y+h, x:x+w])
+    return faces[-1]
+
+
 def get_face_data(frame, d):
     shape = sp(frame, d)
     face1desc = facerec.compute_face_descriptor(frame, shape)  # 100
@@ -33,16 +43,12 @@ def get_face_data(frame, d):
     for face2 in faces:
         if euclidean_dist(face1desc, face2["desc"]) < 0.36:
             return face2
-    else: #uncomment this to do learning
-        return None
-    name = input("Enter name of the face")
-    image_name = name+".png"
-    faces.append({"desc":face1desc ,"name": name, "image": image_name})
 
-    x, y, w, h = [d.left(), d.top(), d.width(), d.height()]
-    cv2.imwrite("./data/faces/"+image_name, frame[y:y+h, x:x+w])
-    return faces[-1]
+    if learn_new_faces == 'y':
+        learn_new_face(face1desc)
 
+
+learn_new_faces = input("Do you want to save new faces? [y/N]")
 while True:
     ret, frame = video_capture.read()
     dets = detector(frame, 1)
