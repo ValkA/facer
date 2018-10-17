@@ -25,13 +25,22 @@ def euclidean_dist(vector_x, vector_y):
         raise Exception('Vectors must be same dimensions')
     return sum((vector_x[dim] - vector_y[dim]) ** 2 for dim in range(len(vector_x)))
 
-def learn_new_face(face_descriptor):
-    name = input("Enter name of the face")
+
+def learn_new_face(face_descriptor, frame, d):
+    x, y, w, h = [d.left(), d.top(), d.width(), d.height()]
+    face_roi = frame[y:y+h, x:x+w]
+
+    cv2.imshow("camera", face_roi)
+    cv2.waitKey(1)
+    save = input("do you want to save that face? [y/N]")
+    if(save != 'y'):
+        return None
+
+    name = input("Enter name of the person")
     filename = name+".png"
     faces.append({"desc":face_descriptor ,"name": name, "image": filename})
 
-    x, y, w, h = [d.left(), d.top(), d.width(), d.height()]
-    cv2.imwrite("./data/faces/"+filename, frame[y:y+h, x:x+w])
+    cv2.imwrite("./data/faces/"+filename, face_roi)
     return faces[-1]
 
 
@@ -45,7 +54,9 @@ def get_face_data(frame, d):
             return face2
 
     if learn_new_faces == 'y':
-        learn_new_face(face1desc)
+        return learn_new_face(face1desc, frame, d)
+
+    return None
 
 
 learn_new_faces = input("Do you want to save new faces? [y/N]")
@@ -67,7 +78,7 @@ while True:
         if "message" in face_data:
             cv2.putText(frame, face_data["message"], (d.left(), d.top()+20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
 
-    cv2.imshow("image", frame) #Display the frame
+    cv2.imshow("camera", frame) #Display the frame
     if cv2.waitKey(1) & 0xFF == ord('q'): #Exit program when the user presses 'q'
         break
 
