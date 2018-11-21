@@ -105,7 +105,3 @@ venv.bak/
 
 # PyCharm
 .idea/
-
-# App stuff
-data/faces/*
-data/data.json
