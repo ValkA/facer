@@ -1,7 +1,13 @@
 import dlib
 import cv2
 import json
+from gtts import gTTS
+import os
+import sys
+import time
 
+tts = gTTS(text='Hello Stranger', lang='en')
+tts.save("hello.mp3")
 
 predictor_path = "shape_predictor_5_face_landmarks.dat"
 face_rec_model_path = "dlib_face_recognition_resnet_model_v1.dat"
@@ -72,6 +78,9 @@ while True:
 
         face_data = get_face_data(frame, d)
         if face_data is None:
+            print("Hi Stranger")
+            os.system("afplay hello.mp3")
+            time.sleep(5)
             continue
 
         cv2.putText(frame, face_data["name"], (d.left(), d.top()), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
