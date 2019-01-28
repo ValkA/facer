@@ -2,6 +2,8 @@ import dlib
 import cv2
 import json
 
+cv2.namedWindow("camera", cv2.WND_PROP_FULLSCREEN)
+cv2.setWindowProperty("camera", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
 predictor_path = "shape_predictor_5_face_landmarks.dat"
 face_rec_model_path = "dlib_face_recognition_resnet_model_v1.dat"
