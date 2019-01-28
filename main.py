@@ -2,6 +2,8 @@ import dlib
 import cv2
 import json
 
+KEYFRAME = 25*1 #each KEYFRAME frames
+
 cv2.namedWindow("camera", cv2.WND_PROP_FULLSCREEN)
 cv2.setWindowProperty("camera", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
@@ -9,8 +11,11 @@ predictor_path = "shape_predictor_5_face_landmarks.dat"
 face_rec_model_path = "dlib_face_recognition_resnet_model_v1.dat"
 faces_folder_path = "data"
 
-with open('./data/data.json') as f:
-    data = json.load(f)
+try:
+    with open('./data/data.json') as f:
+        data = json.load(f)
+except Exception:
+    data = {'faces':[]}
 faces = data['faces']
 
 detector = dlib.get_frontal_face_detector() #a detector to find the data
@@ -60,29 +65,42 @@ def get_face_data(frame, d):
 
     return None
 
-
 learn_new_faces = input("Do you want to save new faces? [y/N]")
+counter = 0
+tracked_faces = {}
+
 while True:
     ret, frame = video_capture.read()
-    dets = detector(frame, 1)
-    print("Number of data detected: {}".format(len(dets)))
 
-    # Now process each face we found.
-    for k, d in enumerate(dets):
-        # print("Detection {}: Left: {} Top: {} Right: {} Bottom: {}".format(  k, d.left(), d.top(), d.right(), d.bottom()))
-        # Get the landmarks/parts for the face in box d.
+    if counter == KEYFRAME:
+        counter = 0
+        tracked_faces = {}
+        dets = detector(frame, 1)
+        for k, d in enumerate(dets):
+            face_data = get_face_data(frame, d)
+            if face_data is not None:
+                face_data = dict(face_data)
+                face_data['tracker'] = cv2.TrackerMedianFlow_create()
+                face_data['tracker'].init(frame, (d.left(), d.top(), d.width(), d.height()))
+                tracked_faces[face_data["name"]] = face_data
 
-        face_data = get_face_data(frame, d)
-        if face_data is None:
-            continue
-
-        cv2.putText(frame, face_data["name"], (d.left(), d.top()), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
-        if "message" in face_data:
-            cv2.putText(frame, face_data["message"], (d.left(), d.top()+20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+                cv2.rectangle(frame, (d.left(),d.top()), (d.right(),d.bottom()), (255,0,0), 1)
+                cv2.putText(frame, face_data["name"], (d.left(), d.top()), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                if "message" in face_data:
+                    cv2.putText(frame, face_data["message"], (d.left(), d.top()+20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+    else:
+        for name, face_data in tracked_faces.items():
+            success, d = face_data['tracker'].update(frame)
+            if success:
+                cv2.rectangle(frame, (int(d[0]),int(d[1])), (int(d[0]+d[2]),int(d[1]+d[3])), (0,0,255), 1)
+                cv2.putText(frame, face_data["name"], (int(d[0]), int(d[1])), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                if "message" in face_data:
+                    cv2.putText(frame, face_data["message"], (int(d[0]), int(d[1]) + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
 
     cv2.imshow("camera", frame) #Display the frame
     if cv2.waitKey(1) & 0xFF == ord('q'): #Exit program when the user presses 'q'
         break
+    counter+=1
 
 with open('./data/data.json', 'w+') as f:
     json.dump(data, f)
