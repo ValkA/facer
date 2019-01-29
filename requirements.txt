@@ -1,4 +1,6 @@
 dlib==19.15.0
 numpy==1.15.1
 opencv-contrib-python
+#pip install -U pyobjc
+git+https://github.com/jpercent/pyttsx.git
 scipy==1.1.0

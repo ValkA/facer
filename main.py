@@ -1,6 +1,8 @@
 import dlib
 import cv2
 import json
+import pyttsx
+tts = pyttsx.init()
 
 KEYFRAME = 25*1 #each KEYFRAME frames
 
@@ -23,8 +25,8 @@ sp = dlib.shape_predictor(predictor_path) #a shape predictor to find face landma
 facerec = dlib.face_recognition_model_v1(face_rec_model_path) #face recognition model
 
 video_capture = cv2.VideoCapture(0) #Webcam object
-video_capture.set(3, 320)
-video_capture.set(4, 240)
+video_capture.set(3, 640)
+video_capture.set(4, 480)
 
 
 def euclidean_dist(vector_x, vector_y):
@@ -37,7 +39,7 @@ def learn_new_face(face_descriptor, frame, d):
     x, y, w, h = [d.left(), d.top(), d.width(), d.height()]
     face_roi = frame[y:y+h, x:x+w]
 
-    cv2.imshow("camera", face_roi)
+    cv2.imshow("face", face_roi)
     cv2.waitKey(1)
     save = input("do you want to save that face? [y/N]")
     if(save != 'y'):
@@ -69,6 +71,8 @@ learn_new_faces = input("Do you want to save new faces? [y/N]")
 counter = 0
 tracked_faces = {}
 
+tts.say('Good morning!')
+
 while True:
     ret, frame = video_capture.read()
 
@@ -84,10 +88,15 @@ while True:
                 face_data['tracker'].init(frame, (d.left(), d.top(), d.width(), d.height()))
                 tracked_faces[face_data["name"]] = face_data
 
+                tts.say(face_data["name"])
+                if face_data.get('message'):
+                    tts.say(str(face_data.get('message')))
+
                 cv2.rectangle(frame, (d.left(),d.top()), (d.right(),d.bottom()), (255,0,0), 1)
                 cv2.putText(frame, face_data["name"], (d.left(), d.top()), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
                 if "message" in face_data:
                     cv2.putText(frame, face_data["message"], (d.left(), d.top()+20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+        tts.runAndWait()
     else:
         for name, face_data in tracked_faces.items():
             success, d = face_data['tracker'].update(frame)
